@@ -43,7 +43,7 @@ Herhangi bir kurulum gerektirmez! Dosyayı indirip tarayıcında açman yeterli:
     ```bash
     git clone [https://github.com/DEZ1-dez1/rullet.git](https://github.com/DEZ1-dez1/rullet.git)
     ```
-2.  `index.html` dosyasını tarayıcınla aç.
+2.  `rulletmain.html` dosyasını tarayıcınla aç.
 
 ## 📜 Lisans
 
