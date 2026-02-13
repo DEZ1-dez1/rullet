@@ -41,7 +41,7 @@ Herhangi bir kurulum gerektirmez! Dosyayı indirip tarayıcında açman yeterli:
 
 1.  Projeyi klonla:
     ```bash
-    git clone [https://github.com/kullaniciadin/roulette-game.git](https://github.com/kullaniciadin/roulette-game.git)
+    git clone [https://github.com/DEZ1-dez1/rullet.git](https://github.com/DEZ1-dez1/rullet.git)
     ```
 2.  `index.html` dosyasını tarayıcınla aç.
 
@@ -50,5 +50,4 @@ Herhangi bir kurulum gerektirmez! Dosyayı indirip tarayıcında açman yeterli:
 Bu proje MIT lisansı altındadır. İstediğiniz gibi geliştirebilir ve kullanabilirsiniz.
 
 ---
-⭐ **Bu projeyi beğendiyseniz yıldız verm
-eyi unutmayın!**
+⭐ **Bu projeyi beğendiyseniz yıldız vermeyi unutmayın!**
