@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ultimate European Roulette</title>
+    <style>
+        :root {
+            --green: #0a4d28;
+            --gold: #d4af37;
+            --red: #be123c;
+            --black: #111;
+        }
+
+        body {
+            background: #052e16;
+            color: white;
+            font-family: sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header {
+            width: 100%;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 2px solid var(--gold);
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--gold);
+        }
+
+        /* Çark Alanı */
+        .wheel-box {
+            position: relative;
+            margin: 20px 0;
+        }
+        #wheel {
+            width: clamp(280px, 80vw, 360px);
+            height: clamp(280px, 80vw, 360px);
+            border-radius: 50%;
+            border: 10px solid #222;
+            transition: transform 6s cubic-bezier(0.1, 0, 0.1, 1);
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+        .pointer {
+            position: absolute;
+            top: -10px; left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid var(--gold);
+            z-index: 5;
+        }
+
+        /* Masa Konteynırı */
+        .table-container {
+            width: 95%;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+        }
+
+        .roulette-table {
+            display: grid;
+            grid-template-columns: 50px repeat(12, 45px) 60px; /* 0 + 12 Sütun + 2to1 */
+            grid-template-rows: repeat(3, 40px) 40px 40px; 
+            gap: 2px;
+            background: #ccc;
+            padding: 3px;
+            min-width: 650px; /* Mobilde kaydırılabilir olmasını sağlar */
+            margin: 0 auto;
+        }
+
+        .cell {
+            background: var(--green);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            position: relative;
+            user-select: none;
+        }
+
+        .cell:active { transform: scale(0.95); }
+
+        /* Özel Alanlar */
+        .zero { grid-row: 1 / span 3; background: #008000; }
+        .red { background: var(--red); }
+        .black { background: var(--black); }
+        
+        .dozens { background: #065f46; font-size: 11px; }
+        .outside { background: #065f46; font-size: 11px; }
+        .column-bet { background: #065f46; font-size: 11px; }
+
+        /* Jetonlar */
+        .chip-on-table {
+            position: absolute;
+            width: 20px; height: 20px;
+            background: gold;
+            color: black;
+            border-radius: 50%;
+            font-size: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+            z-index: 10;
+        }
+
+        /* Kontroller */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding-bottom: 30px;
+        }
+
+        .chips {
+            display: flex;
+            gap: 10px;
+        }
+        .chip-btn {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            border: 3px dashed rgba(255,255,255,0.5);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.3s;
+        }
+        .chip-btn.active { transform: scale(1.2); border-color: white; box-shadow: 0 0 10px white; }
+        
+        .c10 { background: #2563eb; } .c50 { background: #9333ea; } 
+        .c100 { background: #d97706; } .c500 { background: #dc2626; }
+
+        .spin-btn {
+            background: var(--gold);
+            color: black;
+            padding: 15px 50px;
+            border: none;
+            border-radius: 30px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .spin-btn:disabled { background: #444; }
+    </style>
+</head>
+<body>
+
+<div class="header">💰 <span id="balance">1000</span> TL</div>
+
+<div class="wheel-box">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="400" height="400"></canvas>
+</div>
+
+<div class="table-container">
+    <div class="roulette-table" id="board">
+        <div class="cell zero" onclick="placeBet('0')">0</div>
+        </div>
+</div>
+
+<div class="controls">
+    <div class="chips">
+        <div class="chip-btn c10 active" onclick="setChip(10, this)">10</div>
+        <div class="chip-btn c50" onclick="setChip(50, this)">50</div>
+        <div class="chip-btn c100" onclick="setChip(100, this)">100</div>
+        <div class="chip-btn c500" onclick="setChip(500, this)">500</div>
+    </div>
+    <button class="spin-btn" id="spin-btn" onclick="spin()">ÇEVİR</button>
+    <div id="status" style="margin-top:10px; font-weight:bold; color:var(--gold);"></div>
+    <button onclick="clearBets()" style="background:none; border:none; color:#aaa; text-decoration:underline; cursor:pointer;">Bahisleri Temizle</button>
+</div>
+
+<script>
+    const wheelOrder = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+    const redNums = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+    
+    let balance = 1000;
+    let selectedChip = 10;
+    let bets = {};
+    let isSpinning = false;
+    let rotation = 0;
+
+    // Masa Oluşturma
+    const board = document.getElementById('board');
+    
+    // 1-36 Sayıları (3 Satır Düzeni)
+    for (let i = 1; i <= 36; i++) {
+        const isRed = redNums.includes(i);
+        const cell = document.createElement('div');
+        cell.className = `cell ${isRed ? 'red' : 'black'}`;
+        // Rulet dikey dizilir: Alt satır 1, Orta 2, Üst 3
+        cell.style.gridColumn = Math.ceil(i / 3) + 1;
+        cell.style.gridRow = 3 - (i - 1) % 3;
+        cell.innerText = i;
+        cell.onclick = () => placeBet(i.toString());
+        cell.id = `cell-${i}`;
+        board.appendChild(cell);
+    }
+
+    // 2 to 1 (Sütunlar)
+    for (let r = 1; r <= 3; r++) {
+        const c2to1 = document.createElement('div');
+        c2to1.className = 'cell column-bet';
+        c2to1.style.gridColumn = 14;
+        c2to1.style.gridRow = r;
+        c2to1.innerText = '2:1';
+        c2to1.onclick = () => placeBet('col' + (4-r));
+        c2to1.id = `cell-col${4-r}`;
+        board.appendChild(c2to1);
+    }
+
+    // 1st 12, 2nd 12, 3rd 12
+    const dozens = [
+        { id: 'doz1', name: '1st 12', col: '2/span 4' },
+        { id: 'doz2', name: '2nd 12', col: '6/span 4' },
+        { id: 'doz3', name: '3rd 12', col: '10/span 4' }
+    ];
+    dozens.forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'cell dozens';
+        el.style.gridColumn = d.col;
+        el.style.gridRow = 4;
+        el.innerText = d.name;
+        el.id = `cell-${d.id}`;
+        el.onclick = () => placeBet(d.id);
+        board.appendChild(el);
+    });
+
+    // Outside (Red, Black, Even, Odd)
+    const outsides = [
+        { id: 'even', name: 'EVEN', col: '2/span 3' },
+        { id: 'red', name: 'RED', col: '5/span 3', class: 'red' },
+        { id: 'black', name: 'BLACK', col: '8/span 3', class: 'black' },
+        { id: 'odd', name: 'ODD', col: '11/span 3' }
+    ];
+    outsides.forEach(o => {
+        const el = document.createElement('div');
+        el.className = `cell outside ${o.class || ''}`;
+        el.style.gridColumn = o.col;
+        el.style.gridRow = 5;
+        el.innerText = o.name;
+        el.id = `cell-${o.id}`;
+        el.onclick = () => placeBet(o.id);
+        board.appendChild(el);
+    });
+
+    // Canvas Çizim
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    function drawWheel() {
+        const slice = (Math.PI * 2) / 37;
+        wheelOrder.forEach((n, i) => {
+            ctx.save();
+            ctx.beginPath();
+            ctx.fillStyle = n === 0 ? '#008000' : (redNums.includes(n) ? '#be123c' : '#111');
+            ctx.moveTo(200, 200);
+            ctx.arc(200, 200, 190, i * slice, (i + 1) * slice);
+            ctx.fill();
+            ctx.strokeStyle = '#d4af37';
+            ctx.stroke();
+            ctx.translate(200, 200);
+            ctx.rotate(i * slice + slice / 2);
+            ctx.fillStyle = "white";
+            ctx.font = "bold 15px Arial";
+            ctx.fillText(n, 155, 5);
+            ctx.restore();
+        });
+    }
+    drawWheel();
+
+    // Mantık Fonksiyonları
+    function setChip(v, el) {
+        selectedChip = v;
+        document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    function placeBet(id) {
+        if (isSpinning) return;
+        if (balance < selectedChip) return alert("Yetersiz bakiye!");
+
+        bets[id] = (bets[id] || 0) + selectedChip;
+        balance -= selectedChip;
+        document.getElementById('balance').innerText = balance;
+
+        let cell = id === '0' ? document.querySelector('.zero') : document.getElementById(`cell-${id}`);
+        let chip = cell.querySelector('.chip-on-table');
+        if(!chip) {
+            chip = document.createElement('div');
+            chip.className = 'chip-on-table';
+            cell.appendChild(chip);
+        }
+        chip.innerText = bets[id] >= 1000 ? (bets[id]/1000).toFixed(1)+'k' : bets[id];
+    }
+
+    function clearBets() {
+        if (isSpinning) return;
+        Object.values(bets).forEach(v => balance += v);
+        bets = {};
+        document.querySelectorAll('.chip-on-table').forEach(c => c.remove());
+        document.getElementById('balance').innerText = balance;
+    }
+
+    function spin() {
+        if (isSpinning || Object.keys(bets).length === 0) return;
+        
+        isSpinning = true;
+        document.getElementById('spin-btn').disabled = true;
+        document.getElementById('status').innerText = "Çevriliyor...";
+        
+        const extraDegrees = 2000 + Math.random() * 2000;
+        rotation += extraDegrees;
+        canvas.style.transform = `rotate(${rotation}deg)`;
+
+        setTimeout(() => {
+            const normalized = rotation % 360;
+            const index = Math.floor(((360 - (normalized % 360)) + 270) % 360 / (360 / 37));
+            const winNum = wheelOrder[index];
+            calculateWin(winNum);
+            
+            isSpinning = false;
+            document.getElementById('spin-btn').disabled = false;
+            bets = {};
+            document.querySelectorAll('.chip-on-table').forEach(c => c.remove());
+        }, 6000);
+    }
+
+    function calculateWin(num) {
+        let win = 0;
+        const isRed = redNums.includes(num);
+        const isEven = num % 2 === 0 && num !== 0;
+
+        for (let id in bets) {
+            const amt = bets[id];
+            if (id == num.toString()) win += amt * 36;
+            else if (id === 'red' && isRed) win += amt * 2;
+            else if (id === 'black' && !isRed && num !== 0) win += amt * 2;
+            else if (id === 'even' && isEven) win += amt * 2;
+            else if (id === 'odd' && !isEven && num !== 0) win += amt * 2;
+            else if (id === 'doz1' && num >= 1 && num <= 12) win += amt * 3;
+            else if (id === 'doz2' && num >= 13 && num <= 24) win += amt * 3;
+            else if (id === 'doz3' && num >= 25 && num <= 36) win += amt * 3;
+            else if (id === 'col1' && num % 3 === 1) win += amt * 3;
+            else if (id === 'col2' && num % 3 === 2) win += amt * 3;
+            else if (id === 'col3' && num % 3 === 0 && num !== 0) win += amt * 3;
+        }
+
+        balance += win;
+        document.getElementById('balance').innerText = balance;
+        document.getElementById('status').innerHTML = win > 0 ? 
+            `<span style="color:#4ade80">KAZANDIN! Sayı: ${num} (+${win} TL)</span>` : 
+            `<span style="color:#f87171">Kaybettin. Sayı: ${num}</span>`;
+    }
+</script>
+</body>
+</html>
